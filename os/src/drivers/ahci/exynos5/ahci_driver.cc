@@ -1907,8 +1907,12 @@ static Sata_ahci * sata_ahci() {
  ** Ahci_driver **
  *****************/
 
-Ahci_driver::Ahci_driver()
+static void initialize()
 {
+	static bool initialized = false;
+	if (initialized)
+		return;
+
 	static Regulator::Connection clock_src(Regulator::CLK_SATA);
 	static Regulator::Connection power_src(Regulator::PWR_SATA);
 	clock_src.state(true);
@@ -1917,6 +1921,13 @@ Ahci_driver::Ahci_driver()
 	if (sata_phy_ctrl()->init()) throw Root::Unavailable();
 	if (sata_ahci()->init())     throw Root::Unavailable();
 	if (sata_ahci()->p0_init())  throw Root::Unavailable();
+	initialized = true;
+}
+
+
+Ahci_driver::Ahci_driver()
+{
+	initialize();
 }
 
 int Ahci_driver::_ncq_command(uint64_t lba, unsigned cnt, addr_t phys, bool w)
