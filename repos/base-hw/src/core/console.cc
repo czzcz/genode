@@ -1,5 +1,5 @@
 /*
- * \brief  Genode-console backend
+ * \brief  core console backend
  * \author Martin Stein
  * \date   2011-10-17
  */
@@ -16,57 +16,18 @@
 #include <base/printf.h>
 
 /* core includes */
-#include <serial.h>
+#include <platform_console.h>
 
 /* base includes */
 #include <unmanaged_singleton.h>
 
-namespace Genode
-{
-	/**
-	 * Platform specific Genode console
-	 */
-	class Platform_console : public Console, public Serial
-	{
-		enum { BAUD_RATE = 115200 };
-
-		protected:
-
-			/**
-			 * Print a char to the console
-			 */
-			void _out_char(char c)
-			{
-				enum {
-					ASCII_LINE_FEED = 10,
-					ASCII_CARRIAGE_RETURN = 13,
-				};
-
-				/* auto complete new line commands */
-				if (c == ASCII_LINE_FEED)
-					Serial::put_char(ASCII_CARRIAGE_RETURN);
-
-				/* print char */
-				Serial::put_char(c);
-			}
-
-		public:
-
-			/**
-			 * Constructor
-			 */
-			Platform_console() : Serial(BAUD_RATE) { }
-	};
-}
-
-using namespace Genode;
-
-
 /**
  * Static object to print log output
  */
-static Platform_console * platform_console()
+Genode::Platform_console * Genode::platform_console()
 {
+	using namespace Genode;
+
 	return unmanaged_singleton<Platform_console>();
 }
 
@@ -77,6 +38,8 @@ static Platform_console * platform_console()
 
 void Genode::printf(const char *format, ...)
 {
+	using namespace Genode;
+
 	va_list list;
 	va_start(list, format);
 	platform_console()->vprintf(format, list);

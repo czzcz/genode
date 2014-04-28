@@ -39,6 +39,8 @@
 /* base-hw includes */
 #include <kernel/irq.h>
 #include <kernel/perf_counter.h>
+#include <serial.h>
+
 using namespace Kernel;
 
 extern Genode::Native_thread_id _main_thread_id;
@@ -318,6 +320,9 @@ extern "C" void init_kernel_multiprocessor()
 			if (private_interrupt(i)) { continue; }
 			new (&_irqs[i * sizeof(Irq)]) Irq(i);
 		}
+
+		pic()->unmask(Genode::Serial::IRQ, processor_id);
+
 		/* kernel initialization finished */
 		Genode::printf("kernel initialized\n");
 	}
