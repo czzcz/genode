@@ -116,12 +116,32 @@ class Genode::Arm
 				asm volatile ("mrc p15, 0, %0, c2, c0, 2" : "=r" (v) :: );
 				return v;
 			}
+
+
+			/***************************
+			 **  with LPAE extension  **
+			 ***************************/
+
+			struct Irgn0 : Bitfield<8,  2> { };
+			struct Orgn0 : Bitfield<10, 2> { };
+			struct Sh0   : Bitfield<12, 2> { };
+			struct Eae   : Bitfield<31, 1> { }; /* extended address enable */
+
+			static access_t init_virt_kernel()
+			{
+				access_t v = 0;
+				Irgn0::set(v, 1);
+				Orgn0::set(v, 1);
+				Sh0::set(v, 0b10);
+				Eae::set(v, 1);
+				return v;
+			}
 		};
 
 		/**
 		 * Translation table base register 0
 		 */
-		struct Ttbr0 : Register<32>
+		struct Ttbr0 : Register<64>
 		{
 			enum Memory_region { NON_CACHEABLE = 0, CACHEABLE = 1 };
 
@@ -129,7 +149,7 @@ class Genode::Arm
 			struct S   : Bitfield<1,1> { };    /* shareable */
 			struct Rgn : Bitfield<3,2> { };    /* outer cachable mode */
 			struct Nos : Bitfield<5,1> { };    /* not outer shareable */
-			struct Ba  : Bitfield<14, 18> { }; /* translation table base */
+//			struct Ba  : Bitfield<14, 18> { }; /* translation table base */
 
 
 			/*************************************
@@ -140,14 +160,26 @@ class Genode::Arm
 			struct Irgn_0 : Bitfield<6,1> { };
 			struct Irgn   : Bitset_2<Irgn_0, Irgn_1> { }; /* inner cache mode */
 
-			static void write(access_t const v) {
-				asm volatile ("mcr p15, 0, %0, c2, c0, 0" :: "r" (v) : ); }
+
+			/**************************
+			 *  with LPAE extension  **
+			 **************************/
+
+			struct Ba   : Bitfield<5, 34> { }; /* translation table base */
+			struct Asid : Bitfield<48,8>  { };
+
+			static void write(access_t const v)
+			{
+				asm volatile ("mcrr p15, 0, %[v0], %[v1], c2"
+				              :: [v0]"r"(v), [v1]"r"(v >> 32) : );
+			}
 
 			static access_t read()
 			{
-				access_t v;
-				asm volatile ("mrc p15, 0, %0, c2, c0, 0" : "=r" (v) :: );
-				return v;
+				uint32_t v0, v1;
+				asm volatile ("mrrc p15, 0, %[v0], %[v1], c2"
+				              : [v0]"=r"(v0), [v1]"=r"(v1) :: );
+				return (access_t) v0 | ((access_t)v1 << 32);
 			}
 
 			/**
@@ -155,13 +187,10 @@ class Genode::Arm
 			 *
 			 * \param table  base of targeted translation table
 			 */
-			static access_t init(addr_t const table)
+			static access_t init(addr_t const table, unsigned const id)
 			{
-				access_t v = Ba::masked((addr_t)table);
-				Rgn::set(v, CACHEABLE);
-				S::set(v, is_smp() ? 1 : 0);
-				C::set(v, 1);
-				if (is_smp()) Irgn::set(v, CACHEABLE);
+				access_t v = Ba::masked((access_t)table);
+				Asid::set(v, id);
 				return v;
 			}
 		};
@@ -336,25 +365,8 @@ class Genode::Arm
 		 */
 		struct Context : Cpu_state
 		{
-			Cidr::access_t  cidr;
-			Ttbr0::access_t ttbr0;
-
-			/**
-			 * Return base of assigned translation table
-			 */
-			addr_t translation_table() const {
-				return Ttbr0::Ba::masked(ttbr0); }
-
-			/**
-			 * Assign translation-table base 'table'
-			 */
-			void translation_table(addr_t const table) {
-				ttbr0 = Arm::Ttbr0::init(table); }
-
-			/**
-			 * Assign protection domain
-			 */
-			void protection_domain(unsigned const id) { cidr = id; }
+			uint32_t id;
+			uint32_t table;
 		};
 
 		/**
@@ -395,8 +407,8 @@ class Genode::Arm
 			 */
 			void init_thread(addr_t const table, unsigned const pd_id)
 			{
-				protection_domain(pd_id);
-				translation_table(table);
+				this->table = table;
+				this->id    = pd_id;
 			}
 
 			/**
@@ -413,7 +425,7 @@ class Genode::Arm
 
 					/* check if fault was caused by a translation miss */
 					Ifsr::access_t const fs = Ifsr::Fs::get(Ifsr::read());
-					if (fs != Ifsr::section && fs != Ifsr::page) { return 0; }
+					if ((fs & 0b11100) != 0b100) { return 0; }
 
 					/* fetch fault data */
 					w = 0;
@@ -424,7 +436,7 @@ class Genode::Arm
 
 					/* check if fault was caused by translation miss */
 					Dfsr::access_t const fs = Dfsr::Fs::get(Dfsr::read());
-					if (fs != Dfsr::section && fs != Dfsr::page) { return 0; }
+					if ((fs & 0b11100) != 0b100) { return 0; }
 
 					/* fetch fault data */
 					Dfsr::access_t const dfsr = Dfsr::read();

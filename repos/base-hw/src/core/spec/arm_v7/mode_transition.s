@@ -85,39 +85,22 @@
 
 
 /**
- * Override the TTBR0 register
- *
- * \param val  new value, read reg
- */
-.macro _write_ttbr0 val
-	mcr p15, 0, \val, c2, c0, 0
-.endm
-
-
-/**
- * Override the CIDR register
- *
- * \param val  new value, read reg
- */
-.macro _write_cidr val
-	mcr p15, 0, \val, c13, c0, 1
-.endm
-
-
-/**
  * Switch to a given protection domain
  *
- * \param transit_ttbr0  transitional TTBR0 value, read/write reg
  * \param new_cidr       new CIDR value, read reg
  * \param new_ttbr0      new TTBR0 value, read/write reg
  */
-.macro _switch_protection_domain transit_ttbr0, new_cidr, new_ttbr0
-	_write_ttbr0 \transit_ttbr0
+.macro _switch_protection_domain new_cidr, new_ttbr0
+	/* write CONTEXTIDR register */
+	mcr p15, 0, \new_cidr, c13, c0, 1
+
+	/* write translation-table-base register 0 */
+	lsl  \new_cidr, \new_cidr, #16
+	mcrr p15, 0, \new_ttbr0, \new_cidr, c2
+
+	/* instruction and data synchronization barrier */
 	isb
-	_write_cidr \new_cidr
-	isb
-	_write_ttbr0 \new_ttbr0
-	isb
+	dsb
 .endm
 
 
@@ -166,7 +149,7 @@
 	adr sp, _mt_master_context_begin
 	add sp, #TRANSIT_TTBR0_OFFSET
 	ldm sp, {r1, r2, sp}
-	_switch_protection_domain r1, r2, sp
+	_switch_protection_domain r2, sp
 
 	/* get user context-pointer */
 	_get_client_context_ptr sp, r1
@@ -425,7 +408,7 @@
 	ldr r0, [r0, #TRANSIT_TTBR0_OFFSET]
 	add lr, lr, #CIDR_OFFSET
 	ldm lr, {r1, lr}
-	_switch_protection_domain r0, r1, lr
+	_switch_protection_domain r1, lr
 
 	/* apply user r0-r1 and user pc which implies application of spsr */
 	ldm sp, {r0, r1, pc}^

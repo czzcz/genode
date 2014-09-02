@@ -216,6 +216,15 @@ class Genode::Arm_v7 : public Arm
 			}
 		};
 
+		struct Mair0 : Register<32>
+		{
+			static void init()
+			{
+				access_t v = 0xff0044;
+				asm volatile ("mcr p15, 0, %[v], c10, c2, 0" :: [v]"r"(v) : );
+			}
+		};
+
 	public:
 
 		/**
@@ -233,10 +242,11 @@ class Genode::Arm_v7 : public Arm
 		static void
 		init_virt_kernel(addr_t const table, unsigned const process_id)
 		{
+			Mair0::init();
 			Cidr::write(process_id);
 			Dacr::write(Dacr::init_virt_kernel());
-			Ttbr0::write(Ttbr0::init(table));
-			Ttbcr::write(0);
+			Ttbr0::write(Ttbr0::init(table, 1));
+			Ttbcr::write(Ttbcr::init_virt_kernel());
 			Sctlr::write(Sctlr::init_virt_kernel());
 			inval_branch_predicts();
 		}

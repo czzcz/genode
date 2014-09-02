@@ -292,8 +292,8 @@ class Kernel::Pd : public Object<Pd, MAX_PDS, Pd_ids, pd_ids, pd_pool>
 		 */
 		void admit(Processor::Context * const c)
 		{
-			c->protection_domain(id());
-			c->translation_table((addr_t)translation_table());
+			c->id    = id();
+			c->table = (addr_t) translation_table();
 		}
 
 

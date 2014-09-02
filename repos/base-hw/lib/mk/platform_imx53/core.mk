@@ -17,4 +17,4 @@ INC_DIR += $(REP_DIR)/src/core/include/spec/cortex_a8
 SRC_CC += cpu.cc
 
 # include less specific configuration
-include $(REP_DIR)/lib/mk/arm_v7/core.inc
+include $(REP_DIR)/lib/mk/cortex_a8/core.inc

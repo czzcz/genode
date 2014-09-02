@@ -18,4 +18,4 @@ SRC_CC += spec/arm_gic/pic.cc
 SRC_CC += cpu.cc
 
 # include less specific configuration
-include $(REP_DIR)/lib/mk/arm_v7/core.inc
+include $(REP_DIR)/lib/mk/cortex_a9/core.inc
