@@ -1,0 +1,142 @@
+set use_blk_cache 1
+
+#
+# Build
+#
+set build_components {
+	core init
+	drivers/timer
+	drivers/ahci
+	server/part_blk
+	server/rump_fs
+	test/libc_vfs
+}
+
+lappend_if [have_spec acpi]    build_components drivers/acpi
+lappend_if [have_spec pci]     build_components drivers/pci
+lappend_if [have_spec pci]     build_components drivers/pci/device_pd
+lappend_if $use_blk_cache      build_components server/blk_cache
+
+build $build_components
+create_boot_directory
+
+#
+# Generate config
+#
+append config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL" />
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="acpi">
+		<resource name="RAM" quantum="10M"/>
+		<binary name="acpi_drv"/>
+		<provides>
+			<service name="PCI"/>
+			<service name="IRQ" />
+		</provides>
+		<route>
+			<service name="PCI"> <any-child /> </service>
+			<any-service> <parent/> <any-child /> </any-service>
+		</route>
+	</start>
+	<start name="ahci">
+		<binary name="ahci" />
+		<resource name="RAM" quantum="10M" />
+		<provides><service name="Block" /></provides>
+		<route>
+			<service name="IRQ"><child name="acpi" /></service>
+			<any-service> <parent /> <any-child /></any-service>
+		</route>
+	</start>
+}
+
+append_if $use_blk_cache config {
+	<start name="blk_cache">
+		<resource name="RAM" quantum="3M" />
+		<provides><service name="Block" /></provides>
+		<route>
+			<service name="Block"><child name="ahci" /></service>
+			<any-service> <parent /> <any-child /></any-service>
+		</route>
+	</start> }
+
+append config {
+	<start name="part_blk">
+		<resource name="RAM" quantum="10M" />
+		<provides><service name="Block" /></provides>
+		<route>}
+append_if [expr !$use_blk_cache] config {
+			<any-service><child name="ahci"/> <parent/><any-child/></any-service>}
+append_if $use_blk_cache config {
+			<any-service><child name="blk_cache"/> <parent/><any-child/></any-service>}
+append config {
+		</route>
+		<config>
+			<policy label="rump_fs" partition="1"/>
+		</config>
+	</start>
+	<start name="rump_fs">
+		<resource name="RAM" quantum="8M" />
+		<provides><service name="File_system"/></provides>
+		<config fs="ext2fs"><policy label="" root="/" writeable="yes"/></config>
+		<route>
+			<any-service><child name="part_blk"/> <parent/><any-child/></any-service>
+		</route>
+	</start>
+	<start name="test-libc_vfs">
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<libc stdout="/dev/log">
+				<vfs>
+					<dir name="dev"> <log/> </dir>
+					<fs/>
+				</vfs>
+			</libc>
+		</config>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init timer test-libc_vfs ahci part_blk blk_cache
+	rump.lib.so rump_fs.lib.so rump_fs
+	ld.lib.so libc.lib.so
+}
+
+lappend_if [have_spec pci]     boot_modules pci_drv
+lappend_if [have_spec acpi]    boot_modules acpi_drv
+lappend_if [have_spec nova]    boot_modules pci_device_pd
+lappend_if $use_blk_cache      boot_modules blk_cache
+
+build_boot_image $boot_modules
+
+append qemu_args " -m 256 -nographic"
+append qemu_args " -drive id=disk,file=var/run/rump_ext2.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0 -boot d"
+
+run_genode_until {.*child exited with exit value 0.*} 60
+
+puts "\nTest succeeded\n"
