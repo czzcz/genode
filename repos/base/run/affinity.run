@@ -5,9 +5,17 @@
 #
 
 if {
-	![have_spec hw_arndale] &&
-	([have_spec platform_pbxa9] || (![have_spec nova] && ![have_spec foc]))
-} {
+   [have_spec platform_rpi]    ||
+   [have_spec platform_pbxa9]  ||
+   [have_spec platform_imx31]  ||
+   [have_spec platform_imx53]  ||
+   [have_spec platform_vea9x4] ||
+   [have_spec linux]           ||
+   [have_spec fiasco]          ||
+   [have_spec pistachio]       ||
+   [have_spec okl4]            ||
+   [have_spec codezero]        ||
+   [have_spec hw_panda] } {
 	puts "Platform is unsupported."
 	exit 0
 }
