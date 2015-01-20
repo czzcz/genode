@@ -6,7 +6,7 @@
 ifeq ($(called_from_lib_mk),yes)
 
 # packages in 'l4/pkg/'
-PKGS = uclibc-headers uclibc-minimal l4util cxx
+PKGS = crtn uclibc-headers l4util cxx uclibc-minimal libstdc++-headers
 
 include $(REP_DIR)/mk/l4_pkg.mk
 all: $(PKG_TAGS)
