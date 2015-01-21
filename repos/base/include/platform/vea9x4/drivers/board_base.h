@@ -70,6 +70,10 @@ namespace Genode
 			CORTEX_A9_PRIVATE_MEM_SIZE  = 0x2000,
 			CORTEX_A9_PRIVATE_TIMER_CLK = 200010000,
 
+			/* L2 cache controller */
+			PL310_MMIO_BASE = 0x1E00A000,
+			PL310_MMIO_SIZE = 0x1000,
+
 			/* wether board provides security extension */
 			SECURITY_EXTENSION = 1,
 
