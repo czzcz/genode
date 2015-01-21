@@ -290,7 +290,7 @@ void info()
 	printf(" \n");
 
 	printf(" Processor feature register 1:\n");
-	printf("   Programmers’ model:          0x%x\n", Id_pfr1::B0::get(Id_pfr1::read()));
+	printf("   Programmers model:          0x%x\n", Id_pfr1::B0::get(Id_pfr1::read()));
 	printf("   Security Extensions:         0x%x\n", Id_pfr1::B1::get(Id_pfr1::read()));
 	printf("   M profile programmers model: 0x%x\n", Id_pfr1::B2::get(Id_pfr1::read()));
 	printf("   Virtualization Extensions:   0x%x\n", Id_pfr1::B3::get(Id_pfr1::read()));

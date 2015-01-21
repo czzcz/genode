@@ -7,5 +7,5 @@
 # add C++ sources
 SRC_CC += spec/arm_v7/info.cc
 
-# decrlare source directories
+# declare source directories
 vpath % $(REP_DIR)/src/test/hw_info
