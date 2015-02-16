@@ -58,8 +58,28 @@ class Genode::Timer
 
 		unsigned value(unsigned)
 		{
-			PDBG("not implemented");
-			return 0;
+			unsigned count, status;
+
+			outb(PIT_MODE, PIT_READ_BACK);
+
+			status = inb(PIT_CH0);
+			count  = inb(PIT_CH0);
+			count |= inb(PIT_CH0) << 8;
+
+			/*
+			 * If the timer fires, counting does not stop. Instead the counter
+			 * is set to 0xffff by the hardware and continues to decrement
+			 * (while OUT stays high). Return 0 if status indicates OUT high
+			 * (timer fired)
+			 *
+			 * See the Intel 8254, Programmable Interval Timer document for more
+			 * details.
+			 */
+			if ((status & 0x80) == 0x80)
+			{
+				return 0;
+			}
+			return count;
 		}
 
 	private:
@@ -67,8 +87,9 @@ class Genode::Timer
 		enum {
 			PIT_TICK_RATE = 1193182ul,
 
-			PIT_CH0  = 0x40,
-			PIT_MODE = 0x43,
+			PIT_CH0       = 0x40,
+			PIT_MODE      = 0x43,
+			PIT_READ_BACK = 0x2c,
 		};
 };
 
