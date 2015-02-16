@@ -16,14 +16,12 @@
 
 #include <base/stdint.h>
 #include <base/printf.h>
-
+#include <port_io.h>
 
 namespace Genode
 {
 	/**
 	 * Timer driver for core
-	 *
-	 * Timer channel 0 apparently doesn't work on the RPI, so we use channel 1
 	 */
 	class Timer;
 }
@@ -32,7 +30,14 @@ class Genode::Timer
 {
 	public:
 
-		Timer() { }
+		Timer()
+		{
+			/*
+			 * Init PIT with lobyte/hibyte access, mode 0 (Interrupt on
+			 * Terminal Count)
+			 */
+			outb(PIT_MODE, 0x30);
+		}
 
 		static unsigned interrupt_id(int)
 		{
