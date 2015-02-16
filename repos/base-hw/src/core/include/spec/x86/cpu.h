@@ -94,7 +94,7 @@ class Genode::Cpu
 			/**
 			 * Return base of assigned translation table
 			 */
-			addr_t translation_table() const { return 0UL; }
+			addr_t translation_table() const { return cr3; }
 
 			/**
 			 * Assign translation-table base 'table'
