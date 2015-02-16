@@ -87,6 +87,11 @@ class Genode::Cpu
 		struct Context : Cpu_state
 		{
 			/**
+			 * Address of top-level paging structure.
+			 */
+			addr_t cr3;
+
+			/**
 			 * Return base of assigned translation table
 			 */
 			addr_t translation_table() const { return 0UL; }
