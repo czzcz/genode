@@ -34,7 +34,7 @@ class Genode::Pic
 			 *        when SMP is an aspect of CPUs only compiled where necessary
 			 */
 			IPI       = 255,
-			NR_OF_IRQ = 256,
+			NR_OF_IRQ = 15,
 		};
 
 		/**
