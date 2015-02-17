@@ -41,7 +41,6 @@ class Genode::Timer
 
 		static unsigned interrupt_id(int)
 		{
-			PDBG("not implemented");
 			return 0;
 		}
 
