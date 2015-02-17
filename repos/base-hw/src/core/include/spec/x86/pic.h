@@ -40,9 +40,7 @@ class Genode::Pic
 		/**
 		 * Constructor
 		 */
-		Pic() { }
-
-		void init_cpu_local() { }
+		Pic();
 
 		bool take_request(unsigned &irq) { return false; }
 
@@ -58,6 +56,7 @@ class Genode::Pic
 		 * Dummies
 		 */
 
+		void init_cpu_local() { }
 		bool is_ip_interrupt(unsigned, unsigned) { return false; }
 		void trigger_ip_interrupt(unsigned) { }
 };
