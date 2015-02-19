@@ -1,5 +1,5 @@
 /*
- * \brief  Kernel backend for virtual machines
+ * \brief  Kernel backend for VMs when having no virtualization
  * \author Martin Stein
  * \date   2013-09-15
  */
@@ -12,10 +12,9 @@
  */
 
 /* core includes */
-#include <kernel/vm.h>
+#include <kernel/thread.h>
 
-namespace Kernel
-{
-	Vm_ids * vm_ids() { return unmanaged_singleton<Vm_ids>(); }
-	Vm_pool * vm_pool() { return unmanaged_singleton<Vm_pool>(); }
-}
+void Kernel::Thread::_call_new_vm()   { user_arg_0(0);  }
+void Kernel::Thread::_call_bin_vm()   { user_arg_0(-1); }
+void Kernel::Thread::_call_run_vm()   { user_arg_0(-1); }
+void Kernel::Thread::_call_pause_vm() { user_arg_0(-1); }
