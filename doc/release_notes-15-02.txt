@@ -1,0 +1,670 @@
+
+
+              ===============================================
+              Release notes for the Genode OS Framework 15.02
+              ===============================================
+
+                               Genode Labs
+
+
+
+;intro
+
+
+; Main topics
+
+
+Virtualization on ARM
+#####################
+
+commit 322be1b4fba0db34f47f8ea6ee66ec7b8b5ba7ef
+Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
+Date:   Fri Feb 6 11:26:39 2015 +0100
+
+    hw: LPAE for Cortex a15 (fix #1387)
+
+commit 8d019529668db14437932c51e5cce098f1df68e4
+Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
+Date:   Thu Feb 19 14:50:27 2015 +0100
+
+    hw_arndale: enable ARM virtualization extensions
+    
+    * enables world-switch using ARM virtualization extensions
+    * split TrustZone and virtualization extensions hardly from platforms,
+      where it is not used
+    * extend 'Vm_session' interface to enable configuration of guest-physical memory
+    * introduce VM destruction syscall
+    * add virtual machine monitor for hw_arndale that emulates a simplified version
+      of ARM's Versatile Express Cortex A15 board for a Linux guest OS
+    
+    Fixes #1405
+
+commit 852774ce831bb219d3563528b41d86a224313881
+Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
+Date:   Wed Feb 18 14:41:49 2015 +0100
+
+    hw_arndale: setup ARM hypervisor mode
+    
+    To enable support of hardware virtualization for ARM on the Arndale board,
+    the cpu needs to be prepared to enter the non-secure mode, as long as it does
+    not already run in it. Therefore, especially the interrupt controller and
+    some TrustZone specific system registers need to be prepared. Moreover,
+    the exception vector for the hypervisor needs to be set up properly, before
+    booting normally in the supervisor mode of the non-secure world.
+    
+    Ref #1405
+
+
+
+Modular tool kit for automated testing
+######################################
+
+; refer to previous effort in version
+; http://genode.org/documentation/release-notes/13.05#Automated_quality-assurance_testing
+
+; XXX image with the run steps
+; * building
+; * configuration of the init component
+; * assembly of the boot directory
+; * creation of the boot image
+; * powering-on the test machine
+; * loading of the boot image
+; * capturing the LOG output
+; * powering off the test machine
+
+commit c706b1c0a7dd15a0193a2eec0c2acd39e49a06a1
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Thu Jan 8 22:08:48 2015 +0100
+
+    run: modularize run tool
+
+commit ce24547eea321b23f342933c6bea6bacd0b14f6f
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Mon Jan 19 22:12:00 2015 +0100
+
+    create_builddir: add default RUN_OPT configuration
+
+commit e3c37f43a02aed5ede0307766a70b10c37cf5292
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Tue Jan 13 19:56:25 2015 +0100
+
+    build.mk: remove RUN_ENV usage
+
+commit 88f62b09885dc874dfb76aebee6b3d4e80ad9ff0
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Thu Jan 8 22:09:08 2015 +0100
+
+    autopilot: adapt runscripts to new run tool
+    
+    Related to #1372.
+
+commit 55bf0bb294ccd32e984710c174e358125372dd94
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Tue Jan 20 14:14:51 2015 +0100
+
+    run: add power_on/softreset
+    
+    The softreset module resets the target system by triggering a software
+    reset.
+    
+    Fixes #1355.
+
+commit 026b5a66c94a19c0a0daede6157183f8c37e9aaf
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Tue Jan 20 15:18:45 2015 +0100
+
+    autopilot: get settings via RUN_OPT_AUTOPILOT
+    
+    If the variable RUN_OPT_AUTOPILOT is set the autopilot will override
+    the default RUN_OPT settings provided in build.conf.
+    
+    Related to #1355.
+
+commit 7cb4d7bf4149cab900880fc507ade15830bd4d85
+Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
+Date:   Wed Feb 4 15:02:01 2015 +0100
+
+    run: support fastboot tool to load images
+    
+    Fixes #1397
+
+commit 761783336540a9017b29cb0c535a2d0e4740f00f
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Fri Feb 6 18:02:55 2015 +0100
+
+    run: capture kernel msg to detect boot errors
+    
+    Handle boot errors like the old run tool did by checking a kernel
+    specific string on boot up and start the run script timeout afterwards.
+    
+    Issue #1395.
+
+commit 467eee07a67dcc11a1a9210b3b9e17f584cc8735
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Thu Feb 12 13:13:21 2015 +0100
+
+    run: increase tcl buffer for run_genode_until
+    
+    and move it close to run_genode_until implementation.
+    Somehow the "match_max -d" gets ignored if it is to far away and some
+    our run scripts fails because the buffer contains not all information
+    (seen for affinity.run on a 8 core machine)
+
+commit 0f47ac958bf6231f5a8f474ee0b096daaf06051c
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Thu Feb 12 12:35:37 2015 +0100
+
+    log/serial: handle spurious EOF
+    
+    While booting up, some devices send garbage over the serial connection.
+    This can result in an unexpected EOF event within expect(1). A filter
+    program may be specified with '--log-serial-filter' to circumvent this
+    problem. Then, the output of the serial program is piped through
+    the filter, which may sanitize the character stream.
+    
+    Fixes #1395.
+
+
+Low-level OS infrastructure
+###########################
+
+Improved management of physical memory
+======================================
+
+On machines with a lot of memory, there exist constraints with regard to
+the physical address ranges of memory:
+
+* On platforms with a non-uniform memory architecture, subsystems should
+  preferably use memory that is local to the CPU cores the subsystem is using.
+  Otherwise the performance is impeded by costly memory accesses to
+  the memory of remote computing nodes.
+
+* Unless an IOMMU is used, device drivers use to program physical addresses
+  into device registers to perform DMA operations. Legacy devices such as
+  USB UHCI controllers expect a 32-bit address. Consequently, the memory
+  used as DMA buffers for those devices must not be allocated above 4 GiB.
+
+* When using an IOMMU on NOVA, Genode represents the address space
+  accessible by devices (by the means of DMA) using a so-called device PD.
+  ([http://genode.org/documentation/release-notes/13.02#DMA_protection_via_IOMMU])
+  All DMA buffers are identity mapped with their physical addresses within
+  the device PD. Because the device PD is a regular component, the upper 1 GiB
+  of its virtual address space is preserved for the kernel. Consequently,
+  no memory objects can be attached to this area, which constraints the
+  physical address range to be used for the DMA buffers to the lower 3 GiB.
+
+Up to now, Genode components had no way to influence the allocation of
+memory with respect to physical address ranges. To solve the problems outlined
+above, we extended core's RAM services to take allocation constraints
+as session arguments when a RAM session is created. All dataspaces created
+via such a session are subjected to the specified constraints. In particular,
+this change enables the AHCI/PCI driver to allocate DMA buffers at suitable
+physical address ranges.
+
+This innocent looking feature to constrain RAM allocations raises a problem
+though: If an arbitrary component was able to constrain RAM allocations in
+arbitrary ways, is would become able to scan the physical address space for
+allocated memory by successively opening RAM sessions with the constraints set
+to an individual page and observe whether an allocation succeeds or not. Two
+conspiring components could use this information to construct a covert storage
+channel.
+
+To prevent such an abuse, the init component filters out allocations
+constrains from RAM-session requests unless explicitly permitted. The
+permission is granted by supplementing the RAM resource assignment of
+a component with the new 'constrain_phys' attribute. For example:
+
+! <resource name="RAM" quantum="3M" constrain_phys="yes"/>
+
+
+Init component
+==============
+
+Most of Genode's example scenarios in the form of run scripts support
+different platforms. However, as the platform details vary, the run scripts
+have to tweak the configuration of the init component according to the
+features of the platform.
+For example, when declaring an explicit route to a framebuffer driver named
+"fb_drv", the run script won't work on Linux because on this platform, the
+framebuffer driver is called "fb_sdl".
+Another example is the role of the USB driver. Depending on the platform, the
+USB driver is an input driver, a block driver, a networking driver, or a
+combination of those.
+Consequently, run scripts with support
+for a great variety of platforms tend to become convoluted with
+platform-specific conditionals.
+
+To counter this problem, we enhanced init to support aliases for component
+names. By defining the following aliases in the init configuration
+! <alias name="nic_drv"   child="usb_drv"/>
+! <alias name="input_drv" child="usb_drv"/>
+! <alias name="block_drv" child="usb_drv"/>
+the USB driver becomes reachable by sessions routed to either "usb_drv",
+"nic_drv", "input_drv", and "block_drv". Consequently, the routing
+configuration of components that use either of those drivers does no longer
+depend on any platform-intrinsic knowledge.
+
+
+RTC session interface
+=====================
+
+; XXX is this worth to be featured in the release notes?
+
+commit 0a835e4ce9def409e630d4bfd1ce0f9e90bf8d98
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Tue Jan 27 13:56:16 2015 +0100
+
+    os: structured timestamp in Rtc session
+    
+    Instead of returning an uint64_t value, return a structured time stamp.
+    This change is only visible to components using Rtc_session directly.
+    
+    Fixes #1381.
+
+
+
+Update of rump-kernel-based file systems
+========================================
+
+We updated the rump-kernel support to a newer rump-kernel version (mid of
+January). This way, Genode is able to profit from the upstream stability
+improvements related to the memory management. Furthermore, we revised the
+Genode backend to allow the rump_fs server to cope well with a large amount of
+memory assigned to it. The latter is useful to utilize the block cache of the
+NetBSD kernel.
+
+
+Libraries and applications
+##########################
+
+As a stepping stone in the
+[https://github.com/genodelabs/genode/issues/1399 - forthcoming effort]
+to bring the Nix package manager to Genode, ports of libbz2 and sqlite had
+been added to the _repos/libports/_ repository.
+
+
+Runtime environments
+####################
+
+VirtualBox on NOVA
+==================
+
+; Highlight the performance improvements:
+; According to cproc's measurements (windows7 boot times and
+; 'make core' on debian), our version is roughly on par with the Linux
+; version.
+
+commit 6d391aae10f01245b64dd9eb557940ca36aec592
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Fri Nov 28 17:14:54 2014 +0100
+
+    vbox: support routing serial output to Genode
+    
+    Fixes #1308
+
+
+commit 183a2c1be6394fae8f18b2e17e4f6c368f3ab798
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Tue Dec 9 14:53:58 2014 +0100
+
+    vbox: support more graphic modes
+    
+    Fixes #1319
+
+commit cdaf6a502d1e43b85157cf498ab3f15da6662609
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Thu Dec 11 17:22:05 2014 +0100
+
+    vbox: support absolute mouse input events
+    
+    Got broken during upgrade from 4.2 to 4.3.
+    
+    Fixes #1321
+
+commit 6791fd18ccd1a10060c59bfbf8ee72ec42834a9a
+Author: Christian Prochaska <christian.prochaska@genode-labs.com>
+Date:   Tue Jan 13 17:38:04 2015 +0100
+
+    vbox: use libc's 'gettimeofday()' function
+    
+    Fixes #1363
+
+commit 50950ec24874b7c5085bcb8278e6efb5a99f32ea
+Author: Christian Prochaska <christian.prochaska@genode-labs.com>
+Date:   Tue Jan 13 20:02:10 2015 +0100
+
+    vbox: 'poke' fixes
+    
+    Fixes #1364
+
+commit 9262629a8619b70ef02635eacc4f0495d178dd1a
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Tue Jan 13 22:10:40 2015 +0100
+
+    vbox: fix interrupt injection in recompiler mode
+    
+    Fixes #1365
+
+commit ce15800beb0e63cc99b986bdf4223709c5543125
+Author: Christian Helmuth <christian.helmuth@genode-labs.com>
+Date:   Thu Jan 15 10:55:01 2015 +0100
+
+    vbox: loosen boot heuristics in auto-disk test
+
+commit 01c27071cd92df726bb7ddee9ab6eebbad56bf55
+Author: Christian Prochaska <christian.prochaska@genode-labs.com>
+Date:   Mon Feb 9 17:06:28 2015 +0100
+
+    vbox: improve virtual time accuracy
+    
+    Fixes #1411
+
+commit 0e5139d0db2267776eb2fbb6f3ada8c5d8954145
+Author: Christian Helmuth <christian.helmuth@genode-labs.com>
+Date:   Wed Jan 14 17:31:34 2015 +0100
+
+    vbox: enable support for Windows 8
+    
+    Fixes #1413
+
+
+Seoul VMM on NOVA
+=================
+
+; XXX should we drop this?
+
+commit 91daf433c5cc2444d508870cba0251b177690dc1
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Tue Dec 16 08:57:53 2014 +0100
+
+    seoul: transform absolute events to relative (PS2)
+    
+    Fixes #1346
+
+
+
+Device drivers
+##############
+
+iPXE-based network drivers
+==========================
+
+commit 68abf0616a97dd0bc478fda9715c5895aa502c24
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Mon Sep 8 11:53:54 2014 +0200
+
+    dde_ipxe: enable Intel I218-LM/I218-V PCI ID
+    
+    Commit inspired by patch from @alex-ab/@cnuke but uses only one patch
+    file for all added NICs.
+    
+    Issue #1220
+
+
+Intel wireless stack
+====================
+
+commit 9ed935ff2adf5029f5e0a09cd1773adbf1922ac1
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Tue Dec 16 13:46:53 2014 +0100
+
+    wifi_drv: look for PCI_CLASS_NETWORK_OTHER only
+    
+    Instead of probing all device on the PCI bus just look for devices
+    matching PCI_CLASS_NETWORK_OTHER. This fixes issues with other devices
+    on the PCI bus, e.g. the GPU, when access their extended config space.
+    
+    Related to #1326.
+
+commit 4c7a5bb3885732bf4cd094bf7b7aefde30fe6c75
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Tue Dec 16 13:35:53 2014 +0100
+
+    wifi_drv: call schedule() in sleep functions
+    
+    The jiffies are only updated on each round of scheduling the runnable
+    tasks. We have to schedule the current task that executes the sleep
+    call to update the jiffies count and thereby preventing the task from
+    entering an endless loop when using a statement like
+    'while (!time_after(jiffies, now + timeout)) { msleep(1); }'.
+    
+    Related to #1326.
+
+commit b557fb13f98de9306d9731c383879500dd732a98
+Author: Josef Söntgen <josef.soentgen@genode-labs.com>
+Date:   Mon Dec 15 14:35:30 2014 +0100
+
+    wifi_drv: fix timer scheduling
+    
+    The context of timer are now inserted correctly and the actual timer
+    triggering the exection of each context is always programmed if the
+    head of the timer list changes.
+    
+    Fixes #1326.
+
+commit fa0f7c0d6d2839ca8d4e9ca6e3a33d5b97de5c4e
+Author: Christian Menard <christian.menard@ksyslabs.org>
+Date:   Fri Dec 5 15:44:57 2014 +0300
+
+    wifi_drv: enable support for iwl7260
+    
+    - essential support for 7260 chipset and DMA fixes
+    - assign mvm->pm_ops at beginning of function iwl_op_mode_mvm_start.
+      iwl_mvm_mac_setup_register() uses mvm->pm_ops, but it is called
+      before this field is set to a valid value.
+    - disable call to function iwl_mvm_prepare_multicast.
+      This function leads to a pagefault, as it aspects a list of multicast
+      addresses, but the list is empty as it is not generated by this port.
+
+commit 22db466194021d8f40b86a12280bfbb91f0a9db5
+Author: Christian Helmuth <christian.helmuth@genode-labs.com>
+Date:   Wed Dec 17 12:02:39 2014 +0100
+
+    wifi_drv: adapt wifi.run for iwl7260
+    
+    Fixes #1317.
+
+
+Improved UART driver for Exynos5
+================================
+
+The UART driver for the Exynos5 SoC has been enhanced by enabling the RX
+channel. This improvement was motivated by automated tests, where a run script
+needs to interact with some component via a terminal connection.
+
+
+Touchscreen support
+===================
+
+commit a59cf9f557cc497a8e239338e51b1e0f01801c4b
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Tue Dec 2 16:04:47 2014 +0100
+
+    usb: wacom touchscreen support
+
+
+USB session interface
+=====================
+
+commit 0c2bdf9edd34f3406dc37d41d1b359b86f8e1164
+Author: Sebastian Sumpf <sebastian.sumpf@genode-labs.com>
+Date:   Thu Nov 13 15:44:15 2014 +0100
+
+    usb_drv: Remote USB driver interface
+    
+    Issue #1329
+
+commit 8843564850e2ebc2c60ba1064571569f02327e25
+Author: Sebastian Sumpf <sebastian.sumpf@genode-labs.com>
+Date:   Wed Dec 17 16:16:36 2014 +0100
+
+    usb_drv: USB terminal driver
+    
+    Issue #1329
+
+
+
+RTC proxy driver for Linux
+==========================
+
+commit febca1b827a847a8debe7c4c108ba2e0120e0cd3
+Author: Christian Helmuth <christian.helmuth@genode-labs.com>
+Date:   Tue Jan 6 21:37:58 2015 +0100
+
+    rtc: pseudo driver for linux + server framework
+    
+    The commit also includes a test program incl. run script.
+    
+    Fixes #1344.
+
+
+Platforms
+#########
+
+
+Execution on bare hardware (base-hw)
+====================================
+
+Support for the USB-Armory board
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; add link to https://www.crowdsupply.com/inverse-path/usb-armory
+
+commit 9a3a84307096e0f56de53ca32da9d612de42ca49
+Author: Martin Stein <martin.stein@genode-labs.com>
+Date:   Wed Feb 25 00:02:36 2015 +0100
+
+    tz_vmm: support USB-Armory board
+    
+    For the USB-Armory, we use a newer version of Linux (3.18) as for the
+    i.MX53-QSB. The main difference is, that the newer Linux uses a DTB instead of
+    ATAGs.
+    
+    Fixes #1422
+
+commit 1a1fc57ff2abf5bd5e2222eed8b6ff000b27a10d
+Author: Martin Stein <martin.stein@genode-labs.com>
+Date:   Tue Feb 24 16:31:50 2015 +0100
+
+    hw: support USB-Armory board
+    
+    The USB Armory is almost the same as the i.MX53-QSB but it uses only
+    one of the two RAM banks available in i.MX53. Furthermore we use the USB
+    Armory only with Trustzone enabled.
+    
+    Ref #1422
+
+
+IPC helping
+~~~~~~~~~~~
+
+commit d704563453911e0b57e2596f7f034fdcfc7ec78a
+Author: Martin Stein <martin.stein@genode-labs.com>
+Date:   Mon Dec 1 15:10:33 2014 +0100
+
+    hw: helping on IPC
+    
+    On base-hw, each thread owns exactly one scheduling context for its
+    whole lifetime. However, introducing helping on IPC, a thread might get
+    executed on scheduling contexts that it doesn't own. Figuratively
+    spoken, the IPC-helping relation spans trees between threads. These
+    trees are identical to those of the IPC relation between threads. The
+    root of such a tree is executed on all scheduling contexts in the tree.
+    All other threads in the tree are not executed on any scheduling context
+    as long as they remain in this position. Consequently, the ready-state
+    of all scheduling contexts in an IPC-helping tree always equals the
+    state of the root context.
+    
+    fix #1102
+
+
+Purged outdated platforms
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+commit 9a4a0448bed1d71f7cf153632bc0b450c1214e14
+Author: Martin Stein <martin.stein@genode-labs.com>
+Date:   Thu Jan 8 13:28:42 2015 +0100
+
+    hw vea9x4: remove trustzone support
+    
+    When building Genode for VEA9X4 as micro-hypervisor protected by the ARM
+    TrustZone hardware we ran into limitations regarding our basic daily
+    testing routines. The most significant is that, when speaking about RAM
+    partitioning, the only available options are to configure the whole SRAM
+    to be secure and the whole DDR-RAM to be non-secure or vice versa. The
+    SRAM however provides only 32 MB which isn't enough for both a
+    representative non-secure guest OS or a secure Genode that is still
+    capable of passing our basic tests. This initiated our decision to
+    remove the VEA9X4 TrustZone-support.
+    
+    Fixes #1351
+
+commit 901bff813d7bec91cad0d164b068a79f93b3d266
+Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
+Date:   Mon Jan 12 11:48:43 2015 +0100
+
+    imx31: remove platform completely (fix #1360)
+
+
+
+commit 21fd2fc5820bba4f595e4daff69e7e96c061b8d1
+Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
+Date:   Tue Sep 2 12:52:44 2014 +0200
+
+    hw: introduce ARM LPAE extension (ref #1387)
+    
+    This patch adds support for the Large Physical Address Space Extension
+    for ARM v7.
+
+
+
+NOVA
+====
+
+; XXX should we cover the VPID issue in the release notes?
+
+commit 988a7962a82dab20c2dfcf76cdd4c384a32719f3
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Wed Jan 7 10:43:01 2015 +0100
+
+    nova: disable vpid feature
+    
+    Workaround for issue #1343. By disabling the 'vpid' feature of the nova
+    kernel several VMs can be used concurrently. Applies for Seoul and VirtualBox.
+    
+    Issue #1343
+
+
+commit 8b41c32239a7dcdf49e9924d8fe0f743af987296
+Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
+Date:   Fri Sep 5 17:00:31 2014 +0200
+
+    nova: use in core one pager per CPU
+    
+    Fixes #1394
+
+
+
+Build system and tools
+######################
+
+
+Tools for convenient handling of port contrib dirs
+==================================================
+
+We supplemented our tools for the ports mechanism with two convenient
+scripts:
+
+:_tool/ports/shortcut_:
+
+  Creates a symbolic link from _contrib/<port-name>-<hash>_ to
+  _contrib/<port-name>_. This is useful when working on the third-party
+  code contained in the _contrib_ directory.
+
+:_tool/ports/current_:
+
+  Prints the current contrib directory of port. When switching
+  branches back and forth, the hash of the used port might change.
+  The script provides a shortcut to looking up the hash file for a
+  specific port within the repositories and printing its content.
+
