@@ -17,45 +17,47 @@
 Virtualization on ARM
 #####################
 
+The ARMv7 architecture of more recent processors, like Cortex-A7, A15, or A17
+CPUs, was extended to facilitate virtualization of guest operating systems. With
+the current release, we enable the usage of this virtualization extension when
+using Genode's custom base-hw kernel on top of the Arndale board.
+
+When integrating ARM's virtualization extension, we aimed to strictly follow
+microkernel-construction principles. The primary design is geared to the
+[http://hypervisor.org/ - NOVA OS Virtualization Architecture]. It grounds on a
+micro-hypervisor that provides only basic primitives to switch between virtual
+machines (VM) and mechanisms that are provided by other micro-kernels too. On
+top of the micro-hypervisor classical OS services are implemented as ordinary,
+unprivileged user applications. Those services can be used by other
+applications. Either services are shared between applications, or instantiated
+separately, according to the security and safety needs. Correspondingly, in NOVA
+every VM has its own associated virtual-machine monitor (VMM) that run as an
+unprivileged user application. VMM implementations can range from simple ones
+that just emulate primary needed devices to highly complex monitors including
+sophisticated device models, like VirtualBox. The NOVA approach allows to
+decouple the TCB complexity of one VM with respect to another, as well as with
+respect to all applications not related to virtualization at all.
+
+Along those lines we extended the base-hw kernel/core conglomerate with a "VM
+session" that enables a VMM user application to create and control virtual
+machines.
+
+Design
+======
+
+The ARM virtualization extensions are based on the so called security
+extensions, commonly known as TrustZone. The ARM designers did not follow the
+Intel approach by splitting the CPU into "root" and "guest" world with all prior
+existing CPU modes available in both. Instead, they have added a new privilege
+level to the non-secure side of the TrustZone that sits underneath the kernel
+and userland privilege levels. It is subject to a hypervisor-like kernel.
+
 ; skalk
 
-commit 322be1b4fba0db34f47f8ea6ee66ec7b8b5ba7ef
-Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
-Date:   Fri Feb 6 11:26:39 2015 +0100
+Implementation
+==============
 
-    hw: LPAE for Cortex a15 (fix #1387)
-
-commit 8d019529668db14437932c51e5cce098f1df68e4
-Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
-Date:   Thu Feb 19 14:50:27 2015 +0100
-
-    hw_arndale: enable ARM virtualization extensions
-    
-    * enables world-switch using ARM virtualization extensions
-    * split TrustZone and virtualization extensions hardly from platforms,
-      where it is not used
-    * extend 'Vm_session' interface to enable configuration of guest-physical memory
-    * introduce VM destruction syscall
-    * add virtual machine monitor for hw_arndale that emulates a simplified version
-      of ARM's Versatile Express Cortex A15 board for a Linux guest OS
-    
-    Fixes #1405
-
-commit 852774ce831bb219d3563528b41d86a224313881
-Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
-Date:   Wed Feb 18 14:41:49 2015 +0100
-
-    hw_arndale: setup ARM hypervisor mode
-    
-    To enable support of hardware virtualization for ARM on the Arndale board,
-    the cpu needs to be prepared to enter the non-secure mode, as long as it does
-    not already run in it. Therefore, especially the interrupt controller and
-    some TrustZone specific system registers need to be prepared. Moreover,
-    the exception vector for the hypervisor needs to be set up properly, before
-    booting normally in the supervisor mode of the non-secure world.
-    
-    Ref #1405
-
+; skalk
 
 
 Modular tool kit for automated testing
