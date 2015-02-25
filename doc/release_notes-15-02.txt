@@ -8,7 +8,7 @@
 
 
 
-;intro
+;intro -> nfeske
 
 
 ; Main topics
@@ -16,6 +16,8 @@
 
 Virtualization on ARM
 #####################
+
+; skalk
 
 commit 322be1b4fba0db34f47f8ea6ee66ec7b8b5ba7ef
 Author: Stefan Kalkowski <stefan.kalkowski@genode-labs.com>
@@ -58,6 +60,8 @@ Date:   Wed Feb 18 14:41:49 2015 +0100
 
 Modular tool kit for automated testing
 ######################################
+
+; nfeske
 
 ; refer to previous effort in version
 ; http://genode.org/documentation/release-notes/13.05#Automated_quality-assurance_testing
@@ -248,6 +252,8 @@ depend on any platform-intrinsic knowledge.
 RTC session interface
 =====================
 
+; cnuke
+
 ; XXX is this worth to be featured in the release notes?
 
 commit 0a835e4ce9def409e630d4bfd1ce0f9e90bf8d98
@@ -288,6 +294,8 @@ Runtime environments
 
 VirtualBox on NOVA
 ==================
+
+; alexab
 
 ; Highlight the performance improvements:
 ; According to cproc's measurements (windows7 boot times and
@@ -371,6 +379,7 @@ Date:   Wed Jan 14 17:31:34 2015 +0100
 Seoul VMM on NOVA
 =================
 
+; alexab
 ; XXX should we drop this?
 
 commit 91daf433c5cc2444d508870cba0251b177690dc1
@@ -389,6 +398,8 @@ Device drivers
 iPXE-based network drivers
 ==========================
 
+; alexab
+
 commit 68abf0616a97dd0bc478fda9715c5895aa502c24
 Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
 Date:   Mon Sep 8 11:53:54 2014 +0200
@@ -403,6 +414,8 @@ Date:   Mon Sep 8 11:53:54 2014 +0200
 
 Intel wireless stack
 ====================
+
+; cnuke
 
 commit 9ed935ff2adf5029f5e0a09cd1773adbf1922ac1
 Author: Josef Söntgen <josef.soentgen@genode-labs.com>
@@ -476,6 +489,8 @@ needs to interact with some component via a terminal connection.
 Touchscreen support
 ===================
 
+; alexab
+
 commit a59cf9f557cc497a8e239338e51b1e0f01801c4b
 Author: Alexander Boettcher <alexander.boettcher@genode-labs.com>
 Date:   Tue Dec 2 16:04:47 2014 +0100
@@ -485,6 +500,8 @@ Date:   Tue Dec 2 16:04:47 2014 +0100
 
 USB session interface
 =====================
+
+; ssumpf
 
 commit 0c2bdf9edd34f3406dc37d41d1b359b86f8e1164
 Author: Sebastian Sumpf <sebastian.sumpf@genode-labs.com>
@@ -507,6 +524,8 @@ Date:   Wed Dec 17 16:16:36 2014 +0100
 RTC proxy driver for Linux
 ==========================
 
+; cnuke
+
 commit febca1b827a847a8debe7c4c108ba2e0120e0cd3
 Author: Christian Helmuth <christian.helmuth@genode-labs.com>
 Date:   Tue Jan 6 21:37:58 2015 +0100
@@ -527,6 +546,8 @@ Execution on bare hardware (base-hw)
 
 Support for the USB-Armory board
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; nfeske
 
 ; add link to https://www.crowdsupply.com/inverse-path/usb-armory
 
@@ -557,6 +578,7 @@ Date:   Tue Feb 24 16:31:50 2015 +0100
 
 IPC helping
 ~~~~~~~~~~~
+; nfeske
 
 commit d704563453911e0b57e2596f7f034fdcfc7ec78a
 Author: Martin Stein <martin.stein@genode-labs.com>
@@ -580,6 +602,7 @@ Date:   Mon Dec 1 15:10:33 2014 +0100
 
 Purged outdated platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+; nfeske
 
 commit 9a4a0448bed1d71f7cf153632bc0b450c1214e14
 Author: Martin Stein <martin.stein@genode-labs.com>
@@ -621,6 +644,7 @@ Date:   Tue Sep 2 12:52:44 2014 +0200
 NOVA
 ====
 
+; alexab
 ; XXX should we cover the VPID issue in the release notes?
 
 commit 988a7962a82dab20c2dfcf76cdd4c384a32719f3
