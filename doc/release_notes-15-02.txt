@@ -17,29 +17,30 @@
 Virtualization on ARM
 #####################
 
-The ARMv7 architecture of more recent processors, like Cortex-A7, A15, or A17
-CPUs, was extended to facilitate virtualization of guest operating systems. With
-the current release, we enable the usage of this virtualization extension when
-using Genode's custom base-hw kernel on top of the Arndale board.
+The ARMv7 architecture of more recent processors, like Cortex-A7, Cortex-A15, or
+Cortex-A17 CPUs, was extended to facilitate virtualization of guest operating
+systems. With the current release, we enable the usage of this virtualization
+extension in our custom base-hw kernel when running on the Arndale board.
 
-When integrating ARM's virtualization extension, we aimed to strictly follow
+While integrating ARM's virtualization extension, we aimed to strictly follow
 microkernel-construction principles. The primary design is geared to the
 [http://hypervisor.org/ - NOVA OS Virtualization Architecture]. It grounds on a
 micro-hypervisor that provides only basic primitives to switch between virtual
-machines (VM) and mechanisms that are provided by other micro-kernels too. On
-top of the micro-hypervisor classical OS services are implemented as ordinary,
-unprivileged user applications. Those services can be used by other
+machines (VM) and essential mechanisms like provided by other micro-kernels
+too. On top of the micro-hypervisor classical OS services are implemented as
+ordinary, unprivileged user applications. Those services can be used by other
 applications. Either services are shared between applications, or instantiated
-separately, according to the security and safety needs. Correspondingly, in NOVA
-every VM has its own associated virtual-machine monitor (VMM) that run as an
-unprivileged user application. VMM implementations can range from simple ones
-that just emulate primary needed devices to highly complex monitors including
-sophisticated device models, like VirtualBox. The NOVA approach allows to
-decouple the TCB complexity of one VM with respect to another, as well as with
-respect to all applications not related to virtualization at all.
+separately, according to the security and safety needs. Correspondingly,
+following the NOVA principles every VM has its own associated virtual-machine
+monitor (VMM) that run as an unprivileged user application. VMM implementations
+can range from simple ones that just emulate primary needed devices to highly
+complex monitors including sophisticated device models, like VirtualBox. The
+NOVA approach allows to decouple the TCB complexity of one VM with respect to
+another, as well as with respect to all applications not related to
+virtualization at all.
 
-Along those lines we extended the base-hw kernel/core conglomerate with a "VM
-session" that enables a VMM user application to create and control virtual
+Along those lines we extended the base-hw kernel/core conglomerate with API
+extensions that enable a VMM user application to create and control virtual
 machines.
 
 Design
@@ -47,17 +48,130 @@ Design
 
 The ARM virtualization extensions are based on the so called security
 extensions, commonly known as TrustZone. The ARM designers did not follow the
-Intel approach by splitting the CPU into "root" and "guest" world with all prior
-existing CPU modes available in both. Instead, they have added a new privilege
-level to the non-secure side of the TrustZone that sits underneath the kernel
-and userland privilege levels. It is subject to a hypervisor-like kernel.
+Intel approach to split the CPU into "root" and "guest" world having all prior
+existing CPU modes available in both. Instead, they added a new privilege level
+to the non-secure side of the TrustZone that sits underneath the ordinary kernel
+and userland privilege levels. It is subject to a hypervisor-like kernel. All
+instructions used to prepare a VM's environment have to be executed in this so
+called "hyp" mode. On the other hand, some instructions do not behave like they
+are executed within kernel privilege level. Therefore, prior-existing kernel
+code cannot simply be shifted into "hyp" mode without modifications.
 
-; skalk
+The base-hw kernel is meant to run Genode's core process on bare hardware. Thus,
+the core process, which is an ordinary application running in userland, was
+linked together with a slim kernel library that is executed in privileged kernel
+mode. To enable ARM hardware virtualization we broadened this approach to run
+the core process in three different privilege levels. Thereby, core shares the
+same view on hardware resources and virtual memory across all levels, but it
+executes only code pathes in higher privilege-levels that would fail in lower
+ones. Following this approach, we could also limit necessary modifications of
+existing kernel code.
+
+[image avirt_overview]
+  Genode's ARM kernel (core) runs across all privilege levels
+
+The hypervisor part of core is only responsible to switch between VMs and the
+host system. Therefore, it needs to load/store additional CPU state that
+normally stay untouched during context switches of ordinary tasks. It needs to
+configure the VM's guest-physical to host-physical translations. Moreover, the
+virtualization extensions of the ARMv7 architecture are not related to the CPU
+cores only. The interrupt controller and the CPU core local timers are
+virtualization affine too. Therefore, the hypervisor has to load/store specific
+state of those devices too. Nevertheless, the hypervisor does reload those
+devices only. It does not interpret its state.
+
+In contrast to the low-complexity hypervisor, the user-level VMM can be complex
+without putting the system's security at risk. It contains potentially complex
+device-emulation code and assigns hardware resources such as memory and
+interrupts to the VM. The VMM is an ordinary application running
+unprivileged. Of course, as plain user-land application it is not able to
+directly access hardware resources. Hence an interface between VMM and the
+kernel is needed to share the state of a virtual machine. We faced a similar
+problem when building a VMM for our former TrustZone experiments. It was natural
+to build upon the available solution, extending it where necessary. Core
+provides a so called VM service. Each VM corresponds to a session of this
+service. The session provides the following extended interface:
+
+:CPU state:
+  The CPU-state function returns a dataspace containing the virtual machine's
+  state. It is initially filled by the VMM before starting the VM, gets updated
+  by the hypervisor whenever it switches away from the VM, and can be used by
+  the VMM to interpret the behavior of the guest OS. Moreover, it can be
+  updated after the virtual machine monitor emulated instructions
+  for the VM.
+
+:Exception handler:
+  The second function is used to register a signal handler that gets informed
+  whenever the VM produces a virtualization fault.
+
+:Run:
+  The run function starts or resumes the execution of the VM.
+
+:Pause:
+  The pause function removes the VM from the kernel's scheduler.
+
+:Attach:
+  This function attaches a given dataspace to a designated area of the
+  guest-physical address space
+
+:Detach:
+  The detach function invalidates a designated area of the guest-physical
+  address space
+
+:Attach_pic: Tells the hypervisor to attach the CPU's virtual interface of the
+  virtualization-aware interrupt controller to a designated area of the
+  guest-physical address space
 
 Implementation
 ==============
 
-; skalk
+Following strictly the micro-kernel construction primitives when integrating the
+hypervisor into the base-hw kernel, we reached a minimal invasive solution. In
+doing so, we took the time to separate TrustZone specific code that was inherent
+part of the kernel for ARMv7 platforms formerly. Now, TrustZone- and
+virtualization-specific aspects are only part of the kernel, where they are
+actually used. The change in complexity of the whole core component expressed in
+lines-of-code is shown in the table below. As can be seen the additional code in
+the root of the Trusted Computing Base when using virtualization is about 700-800
+LOC.
+
+  Platform        | with TrustZone, no VT | TrustZone/VT optional
+ -----------------------------------------------------------------
+  hw_arndale      | 17970 LOC             | 18730 LOC
+ ----------------------------------------------------------------
+  hw_imx53_qsb    | 17900 LOC             | 17760 LOC
+ ----------------------------------------------------------------
+  hw_imx53_qsb_tz | 18260 LOC             | 18320 LOC
+ ----------------------------------------------------------------
+  hw_rpi          | 17500 LOC             | 17430 LOC
+ ----------------------------------------------------------------
+  hw_panda        | 18040 LOC             | 17880 LOC
+ ----------------------------------------------------------------
+  hw_odroid_xu    | 17980 LOC             | 18050 LOC
+
+Beside the pure VM world switch, the kernel got extended by the so called "large
+physical address extension" (LPAE), which is obligatory when using
+virtualization. It allows to address 40-bit instead of only 32-bit physical
+address spaces. Moreover, to execute in hypervisor mode, the bootstrap code of
+the kernel had to be set up properly. Hence, when booting on the Arndale board,
+the kernel now prepares the non-secure TrustZone world first, and finally leaves the
+secure world forever.
+
+To test and showcase the ARM virtualization features integrated in base-hw, we
+implemented a minimal, exemplary VMM. It can be found in
+_repos/os/src/server/vmm_. The VMM emulates a simplified variant of ARM's
+Versatile Express Cortex A15 development platform. Currently, it only comprises
+support for the CPU, timer, interrupt-controller, and a UART device. It is
+written in 1100 lines of C++ in addition to the base Genode libraries. The VMM
+is able to boot a vanilla Linux kernel compiled with a slightly modified
+standard configuration (no-SMP), and a device tree description stripped down to
+the devices provided by the VMM. This release include an automated run test that
+executes the Linux kernel on top of the VMM on Genode. It can be started via:
+
+! make run/vmm
+
+[image avirt_screen]
+  Three Linux serial consoles running in parallel on top of Genode
 
 
 Modular tool kit for automated testing
