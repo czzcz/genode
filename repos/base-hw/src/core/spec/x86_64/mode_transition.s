@@ -12,7 +12,22 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+.include "macros.s"
+
 .section .text
+
+	/*
+	 * Page aligned base of mode transition code.
+	 *
+	 * This position independent code switches between a kernel context and a
+	 * user context and thereby between their address spaces. Due to the latter
+	 * it must be mapped executable to the same region in every address space.
+	 * To enable such switching, the kernel context must be stored within this
+	 * region, thus one should map it solely accessable for privileged modes.
+	 */
+	.p2align MIN_PAGE_SIZE_LOG2
+	.global _mt_begin
+	_mt_begin:
 
 	/* space for a copy of the kernel context */
 	.p2align 2
@@ -34,19 +49,6 @@
 	.p2align 2
 	.global _mt_buffer
 	_mt_buffer:
-
-	/*
-	 * Page aligned base of mode transition code.
-	 *
-	 * This position independent code switches between a kernel context and a
-	 * user context and thereby between their address spaces. Due to the latter
-	 * it must be mapped executable to the same region in every address space.
-	 * To enable such switching, the kernel context must be stored within this
-	 * region, thus one should map it solely accessable for privileged modes.
-	 */
-	.global _mt_begin
-	_mt_begin:
-	1: jmp 1b
 
 	/*
 	 * On user exceptions the CPU has to jump to one of the following
