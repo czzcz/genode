@@ -60,14 +60,6 @@
 	_mt_user_entry_pic:
 	1: jmp 1b
 
-	.global _mon_kernel_entry
-	_mon_kernel_entry:
-	1: jmp 1b
-
-	.global _mt_vm_entry_pic
-	_mt_vm_entry_pic:
-	1: jmp 1b
-
 	/* end of the mode transition code */
 	.global _mt_end
 	_mt_end:
