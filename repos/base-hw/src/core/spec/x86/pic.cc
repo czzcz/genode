@@ -5,20 +5,42 @@
 using namespace Genode;
 
 enum {
-	PIC1         = 0x20,      /* IO base address for master PIC */
-	PIC2         = 0xa0,      /* IO base address for slave PIC  */
-	PIC1_COMMAND = PIC1,
-	PIC1_DATA    = (PIC1+1),
-	PIC2_COMMAND = PIC2,
-	PIC2_DATA    = (PIC2+1),
-	PIC_EOI      = 0x20,      /* End-of-interrupt command code  */
-	ICW1_INIT    = 0x10,      /* Initialization                 */
-	ICW1_ICW4    = 0x01,      /* Enable ICW4                    */
-	ICW4_8086    = 0x01,      /* 8086/88 (MCS-80/85) mode       */
+	PIC1          = 0x20,      /* IO base address for master PIC */
+	PIC2          = 0xa0,      /* IO base address for slave PIC  */
+	PIC1_COMMAND  = PIC1,
+	PIC1_DATA     = (PIC1+1),
+	PIC2_COMMAND  = PIC2,
+	PIC2_DATA     = (PIC2+1),
+	PIC_EOI       = 0x20,      /* End-of-interrupt command code  */
+	ICW1_INIT     = 0x10,      /* Initialization                 */
+	ICW1_ICW4     = 0x01,      /* Enable ICW4                    */
+	ICW4_8086     = 0x01,      /* 8086/88 (MCS-80/85) mode       */
+	OCW3_READ_ISR = 0x0b,      /* OCW3 irq service               */
 
 	MASTER_VEC_OFFSET = 0x20,
 	SLAVE_VEC_OFFSET  = 0x28,
 };
+
+
+/* Return PIC1/PIC2 combined result for given command */
+static uint16_t pic_get_combined(int const cmd)
+{
+	outb(PIC1_COMMAND, cmd);
+	outb(PIC2_COMMAND, cmd);
+	return (inb(PIC2_COMMAND) << 8) | inb(PIC1_COMMAND);
+}
+
+/* Returns the combined value of the cascaded PICs ISR */
+static uint16_t pic_get_isr(void)
+{
+	return pic_get_combined(OCW3_READ_ISR);
+}
+
+/* Determine lowest pending request vector from given ISR bitmask */
+static unsigned pic_get_lowest_vector(unsigned const bitmask)
+{
+	return __builtin_ffs(bitmask) - 1;
+}
 
 
 Pic::Pic()
@@ -51,4 +73,15 @@ Pic::Pic()
 	/* Restore saved masks */
 	outb(PIC1_DATA, a1);
 	outb(PIC2_DATA, a2);
+}
+
+bool Pic::take_request(unsigned &irq)
+{
+	unsigned const isr = pic_get_isr();
+	if (isr == 0) {
+		return false;
+	}
+
+	irq = pic_get_lowest_vector(isr);
+	return true;
 }

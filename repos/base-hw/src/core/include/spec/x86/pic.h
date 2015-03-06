@@ -42,7 +42,7 @@ class Genode::Pic
 		 */
 		Pic();
 
-		bool take_request(unsigned &irq) { return false; }
+		bool take_request(unsigned &irq);
 
 		void finish_request() { }
 
