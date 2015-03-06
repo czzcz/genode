@@ -85,3 +85,9 @@ bool Pic::take_request(unsigned &irq)
 	irq = pic_get_lowest_vector(isr);
 	return true;
 }
+
+void Pic::finish_request()
+{
+	outb(PIC1_COMMAND, PIC_EOI);
+	outb(PIC2_COMMAND, PIC_EOI);
+}

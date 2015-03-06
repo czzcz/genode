@@ -44,7 +44,7 @@ class Genode::Pic
 
 		bool take_request(unsigned &irq);
 
-		void finish_request() { }
+		void finish_request();
 
 		void mask() { }
 
