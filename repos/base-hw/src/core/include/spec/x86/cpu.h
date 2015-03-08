@@ -384,6 +384,25 @@ class Genode::Cpu
 		bool retry_undefined_instr(Cpu_lazy_state *) { return false; }
 
 		/**
+		 * Return whether to retry an FPU instruction after this call
+		 */
+		bool retry_fpu_instr(Cpu_lazy_state * const state)
+		{
+			if (is_fpu_enabled())
+				return false;
+
+			_enable_fpu();
+			if (_fpu_state != state) {
+				if (_fpu_state)
+					_fpu_state->save();
+
+				state->load();
+				_fpu_state = state;
+			}
+			return true;
+		}
+
+		/**
 		 * Return kernel name of the executing CPU
 		 */
 		static unsigned executing_id() { return 0; }
