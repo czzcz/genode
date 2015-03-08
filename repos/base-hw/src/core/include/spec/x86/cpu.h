@@ -412,13 +412,27 @@ class Genode::Cpu
 		 */
 		static unsigned primary_id() { return 0; }
 
+		/**
+		 * Prepare for the proceeding of a user
+		 *
+		 * \param old_state  CPU state of the last user
+		 * \param new_state  CPU state of the next user
+		 */
+		static void prepare_proceeding(Cpu_lazy_state * const old_state,
+		                               Cpu_lazy_state * const new_state)
+		{
+			if (old_state == new_state)
+				return;
+
+			_disable_fpu();
+		}
+
 		/*************
 		 ** Dummies **
 		 *************/
 
 		static void tlb_insertions() { inval_branch_predicts(); }
 		static void translation_added(addr_t, size_t) { }
-		static void prepare_proceeding(Cpu_lazy_state *, Cpu_lazy_state *) { }
 
 };
 
