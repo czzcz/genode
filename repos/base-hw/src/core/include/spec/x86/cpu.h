@@ -263,14 +263,6 @@ class Genode::Cpu
 		static void translation_added(addr_t, size_t) { }
 		static void prepare_proceeding(Cpu_lazy_state *, Cpu_lazy_state *) { }
 
-		struct Dfar : Register<32>
-		{
-			static access_t read()
-			{
-				PDBG("not implemented");
-				return 0UL;
-			}
-		};
 };
 
 #endif /* _CPU_H_ */
