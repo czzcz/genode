@@ -131,6 +131,12 @@ class Genode::Cpu
 			asm volatile ("fninit");
 		}
 
+		/**
+		 * Returns True if the FPU is enabled.
+		 */
+		static bool is_fpu_enabled() {
+			return !Cr0::Ts::get(Cr0::read()); }
+
 	public:
 
 		Cpu()
