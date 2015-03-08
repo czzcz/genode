@@ -123,6 +123,14 @@ class Genode::Cpu
 		static void _enable_fpu() {
 			asm volatile ("clts"); }
 
+		/**
+		 * Initialize FPU without checking for pending unmasked floating-point
+		 * exceptions.
+		 */
+		static void _init_fpu()	{
+			asm volatile ("fninit");
+		}
+
 	public:
 
 		Cpu()
