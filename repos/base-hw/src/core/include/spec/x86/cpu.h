@@ -30,7 +30,7 @@ namespace Genode
 	/**
 	 * Part of CPU state that is not switched on every mode transition
 	 */
-	class Cpu_lazy_state { };
+	class Cpu_lazy_state;
 
 	/**
 	 * CPU driver for core
@@ -39,6 +39,41 @@ namespace Genode
 }
 
 namespace Kernel { using Genode::Cpu_lazy_state; }
+
+class Genode::Cpu_lazy_state
+{
+	friend class Cpu;
+
+	private:
+
+		/**
+		 * FXSAVE area providing storage for x87 FPU, MMX, XMM, and MXCSR
+		 * registers.
+		 *
+		 * For further details see Intel SDM Vol. 2A, 'FXSAVE instruction'.
+		 */
+		char fxsave_area[512];
+
+		/**
+		 * Load x87 FPU State from fxsave area.
+		 */
+		inline void load() {
+			asm volatile ("fxrstor %0" : : "m" (*fxsave_area)); }
+
+		/**
+		 * Save x87 FPU State to fxsave area.
+		 */
+		inline void save() {
+			asm volatile ("fxsave %0" : "=m" (*fxsave_area)); }
+
+	public:
+
+		/**
+		 * Constructor
+		 */
+		inline Cpu_lazy_state() {};
+} __attribute__((aligned(16)));
+
 
 class Genode::Cpu
 {
