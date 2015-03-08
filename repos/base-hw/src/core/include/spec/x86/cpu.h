@@ -77,9 +77,12 @@ class Genode::Cpu_lazy_state
 
 class Genode::Cpu
 {
+	friend class Cpu_lazy_state;
+
 	private:
 		Idt *_idt;
 		Tss *_tss;
+		Cpu_lazy_state *_fpu_state;
 
 		/**
 		 * Control register 0
@@ -139,7 +142,7 @@ class Genode::Cpu
 
 	public:
 
-		Cpu()
+		Cpu() : _fpu_state(0)
 		{
 			if (primary_id() == executing_id()) {
 				_idt = new (&_mt_idt) Idt();
