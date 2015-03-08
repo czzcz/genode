@@ -117,6 +117,12 @@ class Genode::Cpu
 			Cr0::write(Cr0::read() | Cr0::Ts::bits(1));
 		}
 
+		/**
+		 * Enable FPU by clearing the TS flag in CR0.
+		 */
+		static void _enable_fpu() {
+			asm volatile ("clts"); }
+
 	public:
 
 		Cpu()
