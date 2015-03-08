@@ -352,8 +352,8 @@ class Genode::Cpu
 		init_virt_kernel(addr_t const table, unsigned const process_id) {
 			Cr3::write(Cr3::init(table)); }
 
-		inline static void finish_init_phys_kernel()
-		{ }
+		inline static void finish_init_phys_kernel() {
+			_init_fpu(); }
 
 		/**
 		 * Configure this module appropriately for the first kernel run
