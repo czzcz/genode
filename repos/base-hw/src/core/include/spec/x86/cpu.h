@@ -109,6 +109,14 @@ class Genode::Cpu
 			}
 		};
 
+		/**
+		 * Disable FPU by setting the TS flag in CR0.
+		 */
+		static void _disable_fpu()
+		{
+			Cr0::write(Cr0::read() | Cr0::Ts::bits(1));
+		}
+
 	public:
 
 		Cpu()
