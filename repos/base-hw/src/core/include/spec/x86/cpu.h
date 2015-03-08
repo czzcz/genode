@@ -81,6 +81,34 @@ class Genode::Cpu
 		Idt *_idt;
 		Tss *_tss;
 
+		/**
+		 * Control register 0
+		 */
+		struct Cr0 : Register<64>
+		{
+			struct Pe : Bitfield<0,  1> { };  /* Protection Enable   */
+			struct Mp : Bitfield<1,  1> { };  /* Monitor Coprocessor */
+			struct Em : Bitfield<2,  1> { };  /* Emulation           */
+			struct Ts : Bitfield<3,  1> { };  /* Task Switched       */
+			struct Et : Bitfield<4,  1> { };  /* Extension Type      */
+			struct Ne : Bitfield<5,  1> { };  /* Numeric Error       */
+			struct Wp : Bitfield<16, 1> { };  /* Write Protect       */
+			struct Am : Bitfield<18, 1> { };  /* Alignment Mask      */
+			struct Nw : Bitfield<29, 1> { };  /* Not Write-through   */
+			struct Cd : Bitfield<30, 1> { };  /* Cache Disable       */
+			struct Pg : Bitfield<31, 1> { };  /* Paging              */
+
+			static void write(access_t const v) {
+				asm volatile ("mov %0, %%cr0" :: "r" (v) : ); }
+
+			static access_t read()
+			{
+				access_t v;
+				asm volatile ("mov %%cr0, %0" : "=r" (v) :: );
+				return v;
+			}
+		};
+
 	public:
 
 		Cpu()
