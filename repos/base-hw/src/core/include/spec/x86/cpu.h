@@ -52,26 +52,38 @@ class Genode::Cpu_lazy_state
 		 *
 		 * For further details see Intel SDM Vol. 2A, 'FXSAVE instruction'.
 		 */
-		char fxsave_area[512];
+		char fxsave_area[527];
+
+		/**
+		 * 16-byte aligned start of FXSAVE area.
+		 */
+		char *start;
 
 		/**
 		 * Load x87 FPU State from fxsave area.
 		 */
 		inline void load() {
-			asm volatile ("fxrstor %0" : : "m" (*fxsave_area)); }
+			asm volatile ("fxrstor %0" : : "m" (*start)); }
 
 		/**
 		 * Save x87 FPU State to fxsave area.
 		 */
 		inline void save() {
-			asm volatile ("fxsave %0" : "=m" (*fxsave_area)); }
+			asm volatile ("fxsave %0" : "=m" (*start)); }
 
 	public:
 
 		/**
 		 * Constructor
+		 *
+		 * Calculate 16-byte aligned start of FXSAVE area if necessary.
 		 */
-		inline Cpu_lazy_state() {};
+		inline Cpu_lazy_state()
+		{
+			start = fxsave_area;
+			if((addr_t)start & 15)
+				start = (char *)((addr_t)start & ~15) + 16;
+		};
 } __attribute__((aligned(16)));
 
 
