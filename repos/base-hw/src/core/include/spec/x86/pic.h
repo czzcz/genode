@@ -50,7 +50,7 @@ class Genode::Pic
 
 		void unmask(unsigned const i, unsigned) { }
 
-		void mask(unsigned const i) { }
+		void mask(unsigned const i);
 
 		/*
 		 * Dummies

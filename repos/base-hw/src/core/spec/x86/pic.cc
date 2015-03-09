@@ -91,3 +91,21 @@ void Pic::finish_request()
 	outb(PIC1_COMMAND, PIC_EOI);
 	outb(PIC2_COMMAND, PIC_EOI);
 }
+
+void Pic::mask(unsigned const i)
+{
+	unsigned port, bitpos;
+	uint8_t value;
+
+	bitpos = i;
+
+	if (i < 8) {
+		port = PIC1_DATA;
+	} else {
+		port = PIC2_DATA;
+		bitpos -= i;
+	}
+
+	value = inb(port) | (1 << bitpos);
+	outb(port, value);
+}
