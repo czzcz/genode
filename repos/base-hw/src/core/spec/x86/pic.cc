@@ -92,7 +92,17 @@ void Pic::finish_request()
 	outb(PIC2_COMMAND, PIC_EOI);
 }
 
+void Pic::unmask(unsigned const i, unsigned)
+{
+	toggle_mask(i, true);
+}
+
 void Pic::mask(unsigned const i)
+{
+	toggle_mask(i, false);
+}
+
+void Pic::toggle_mask(unsigned const i, bool const enable)
 {
 	unsigned port, bitpos;
 	uint8_t value;
@@ -106,6 +116,12 @@ void Pic::mask(unsigned const i)
 		bitpos -= i;
 	}
 
-	value = inb(port) | (1 << bitpos);
+	value = inb(port);
+	if (!enable)
+	{
+		value |= (1 << bitpos);
+	} else {
+		value &= ~(1 << bitpos);
+	}
 	outb(port, value);
 }

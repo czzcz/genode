@@ -26,6 +26,17 @@ namespace Genode
 
 class Genode::Pic
 {
+	private:
+
+		/**
+		 * Toggle mask bit for given IRQ.
+		 *
+		 * \param i       IRQ to mask/unmask
+		 * \param enable  If true, unmask the given IRQ;
+		 *                otherwise mask it
+		 */
+		void toggle_mask(unsigned const i, bool const enable);
+
 	public:
 
 		enum {
@@ -48,7 +59,7 @@ class Genode::Pic
 
 		void mask() { }
 
-		void unmask(unsigned const i, unsigned) { }
+		void unmask(unsigned const i, unsigned);
 
 		void mask(unsigned const i);
 
