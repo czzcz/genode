@@ -28,7 +28,14 @@ class Genode::Pic
 {
 	public:
 
-		enum { NR_OF_IRQ = 256 };
+		enum {
+			/*
+			 * FIXME: dummy ipi value on non-SMP platform, should be removed
+			 *        when SMP is an aspect of CPUs only compiled where necessary
+			 */
+			IPI       = 255,
+			NR_OF_IRQ = 256,
+		};
 
 		/**
 		 * Constructor
