@@ -26,9 +26,5 @@ Thread::Thread(unsigned const priority, unsigned const quota,
 { PDBG("not implemented"); }
 
 
-void Thread::_call_new_vm() {
-	PDBG("not implemented"); }
-
-
 void Thread::exception(unsigned const cpu) {
 	PDBG("not implemented"); }

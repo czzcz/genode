@@ -13,7 +13,7 @@ SRC_CC += platform_services.cc
 SRC_CC += spec/x86/platform_support.cc
 SRC_CC += spec/x86/kernel/thread.cc
 SRC_CC += spec/x86/kernel/cpu.cc
-SRC_CC += spec/x86/kernel/vm.cc
+SRC_CC += kernel/vm_thread.cc
 
 # include less specific configuration
 include $(REP_DIR)/lib/mk/core.inc
