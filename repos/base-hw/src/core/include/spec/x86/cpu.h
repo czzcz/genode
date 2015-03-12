@@ -200,30 +200,6 @@ class Genode::Cpu
 		{ }
 
 		/**
-		 * Wether we are in secure mode
-		 */
-		static bool secure_mode()
-		{
-			return false;
-		}
-
-
-		/******************************
-		 **  Trustzone specific API  **
-		 ******************************/
-
-		/**
-		 * Set exception-vector's address for monitor mode to 'a'
-		 */
-		static void mon_exception_entry_at(addr_t const a) { }
-
-		/**
-		 * Enable access of co-processors cp10 and cp11 from non-secure mode.
-		 */
-		static inline void allow_coprocessor_nonsecure()
-		{ }
-
-		/**
 		 * Finish all previous data transfers
 		 */
 		static void data_synchronization_barrier()
