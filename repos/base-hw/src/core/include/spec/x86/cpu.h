@@ -102,18 +102,6 @@ class Genode::Cpu
 				protection_domain(pd_id);
 				translation_table(table);
 			}
-
-			/**
-			 * Return if the context is in a page fault due to translation miss
-			 *
-			 * \param va  holds the virtual fault-address if call returns 1
-			 * \param w   holds wether it's a write fault if call returns 1
-			 */
-			bool in_fault(addr_t & va, addr_t & w) const
-			{
-				PDBG("not implemented");
-				return false;
-			}
 		};
 
 		/**
