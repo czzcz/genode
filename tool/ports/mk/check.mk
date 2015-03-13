@@ -17,7 +17,7 @@ check:
 #
 check_tool = $(if $(shell which $(1)),,$(error Need to have '$(1)' installed.))
 
-$(call check_tool,wget)
+$(call check_tool,curl)
 $(call check_tool,git)
 $(call check_tool,svn)
 
@@ -55,7 +55,7 @@ check: $(DOWNLOADS)
 # Check plain remote file
 #
 %.file:
-	$(VERBOSE)wget --quiet --no-check-certificate --spider $(URL($*))
+	$(VERBOSE)curl -f -r 0-1 $(URL($*)) > /dev/null 2>&1
 
 %.archive: %.file
 	$(VERBOSE)true
