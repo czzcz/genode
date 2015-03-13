@@ -1,3 +1,16 @@
+/*
+ * \brief  Programmable interrupt controller for core
+ * \author Reto Buerki
+ * \date   2015-02-17
+ */
+
+/*
+ * Copyright (C) 2015 Genode Labs GmbH
+ *
+ * This file is part of the Genode OS framework, which is distributed
+ * under the terms of the GNU General Public License version 2.
+ */
+
 #include <port_io.h>
 
 #include "pic.h"
