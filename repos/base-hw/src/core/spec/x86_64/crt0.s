@@ -1,8 +1,8 @@
-/*
- * \brief   Startup code for core
+/**
+ * \brief   Startup code for Genode 64Bit applications
+ * \author  Sebastian Sumpf
  * \author  Martin Stein
- * \author  Stefan Kalkowski
- * \date    2011-10-01
+ * \date    2011-05-11
  */
 
 /*
@@ -12,54 +12,34 @@
  * under the terms of the GNU General Public License version 2.
  */
 
-.section ".text.crt0"
+/**************************
+ ** .text (program code) **
+ **************************/
 
-	/* magic multi-boot header to make GRUB happy */
-	.long 0x1badb002
-	.long 0x0
-	.long 0xe4524ffe
+.section ".text"
 
-	/**********************************
-	 ** Startup code for primary CPU **
-	 **********************************/
+	/* program entry-point */
+	.global _core_start
+	_core_start:
 
-	.global _start
-	_start:
+	/* initialize GLOBAL OFFSET TABLE */
+	leaq _GLOBAL_OFFSET_TABLE_(%rip), %r15
 
-	/*
-	 * Install initial temporary environment that is replaced later by the
-	 * environment that init_main_thread creates.
-	 */
-	leaq _stack_high@GOTPCREL(%rip),%rax
+	/* create proper environment for the main thread */
+	call init_main_thread
+
+	/* apply environment that was created by init_main_thread */
+	movq init_main_thread_result@GOTPCREL(%rip), %rax
 	movq (%rax), %rsp
 
-	/* uniprocessor kernel-initialization which activates multiprocessor */
-	call init_kernel_up
+	/* clear the base pointer in order that stack backtraces will work */
+	xorq %rbp, %rbp
 
-	/*********************************************
-	 ** Startup code that is common to all CPUs **
-	 *********************************************/
-
-	.global _start_secondary_cpus
-	_start_secondary_cpus:
-
-	/* do multiprocessor kernel-initialization */
-	call init_kernel_mp
-
-	/* call the kernel main-routine */
-	call kernel
-
-	/* catch erroneous return of the kernel main-routine */
-	1: jmp 1b
-
-
-/*********************************
- ** .bss (non-initialized data) **
- *********************************/
-
-.bss
-
-	/* stack of the temporary initial environment */
-	.p2align 8
-	.space 32 * 1024
-	_stack_high:
+	/*
+	 * We jump into initial C code instead of calling it as it should never
+	 * return on the one hand and because the alignment of the stack pointer
+	 * that init_main_thread returned expects a jump at the other hand. The
+	 * latter matters because GCC expects the initial stack pointer to be
+	 * aligned to 16 byte for at least the handling of floating points.
+	 */
+	jmp _main
