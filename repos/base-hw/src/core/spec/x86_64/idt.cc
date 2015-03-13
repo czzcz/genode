@@ -46,6 +46,7 @@ void Idt::setup(addr_t const virt_base)
 
 void Idt::load(addr_t const virt_base)
 {
-	asm volatile ("lidt %0" : : "m" (Pseudo_descriptor (sizeof(_table) - 1,
-				  _virt_mtc_addr(virt_base, (addr_t)&_mt_idt))));
+	Pseudo_descriptor p(sizeof(_table) - 1,
+	                    _virt_mtc_addr(virt_base,(addr_t)&_mt_idt));
+	asm volatile ("lidt %0" :: "m" (p));
 }

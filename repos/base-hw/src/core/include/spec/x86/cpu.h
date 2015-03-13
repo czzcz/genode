@@ -144,7 +144,7 @@ class Genode::Cpu
 		 * Initialize FPU without checking for pending unmasked floating-point
 		 * exceptions.
 		 */
-		static void _init_fpu()	{
+		static void _init_fpu() {
 			asm volatile ("fninit");
 		}
 
@@ -196,9 +196,9 @@ class Genode::Cpu
 		 */
 		struct Cr3 : Register<64>
 		{
-			struct Pwt : Bitfield<3,1> { };     /* Page-level write-through    */
-			struct Pcd : Bitfield<4,1> { };     /* Page-level cache disable    */
-			struct Pdb : Bitfield<12, 36> { };  /* Page-directory base address */
+			struct Pwt : Bitfield<3,1> { };    /* Page-level write-through    */
+			struct Pcd : Bitfield<4,1> { };    /* Page-level cache disable    */
+			struct Pdb : Bitfield<12, 36> { }; /* Page-directory base address */
 
 			static void write(access_t const v) {
 				asm volatile ("mov %0, %%cr3" :: "r" (v) : ); }

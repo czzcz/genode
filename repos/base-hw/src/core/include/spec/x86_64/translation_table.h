@@ -98,7 +98,7 @@ namespace Genode
 		 * Merge access rights of descriptor with given flags.
 		 */
 		static void merge_access_rights(access_t &desc,
-										Page_flags const &flags)
+		                                Page_flags const &flags)
 		{
 			Rw::set(desc, Rw::get(desc) | flags.writeable);
 			Us::set(desc, Us::get(desc) | !flags.privileged);
@@ -125,10 +125,10 @@ class Genode::Level_4_translation_table
 		{
 			using Common = Common_descriptor;
 
-			struct Pat : Bitfield<7, 1> { };           /* page attribute table */
-			struct G   : Bitfield<8, 1> { };           /* global               */
-			struct Pa  : Bitfield<12, 36> { };         /* physical address     */
-			struct Mt  : Bitset_3<Pwt, Pcd, Pat> { };  /* memory type          */
+			struct Pat : Bitfield<7, 1> { };          /* page attribute table */
+			struct G   : Bitfield<8, 1> { };          /* global               */
+			struct Pa  : Bitfield<12, 36> { };        /* physical address     */
+			struct Mt  : Bitset_3<Pwt, Pcd, Pat> { }; /* memory type          */
 
 			static access_t create(Page_flags const &flags, addr_t const pa)
 			{
@@ -295,14 +295,30 @@ class Genode::Page_directory
 		{
 			using Base = Base_descriptor;
 
-			struct G   : Base::template Bitfield<8, 1> { };       /* global               */
-			struct Pat : Base::template Bitfield<12, 1> { };      /* page attribute table */
-			struct Pa  : Base::template Bitfield<PAGE_SIZE_LOG2,
-							48 - PAGE_SIZE_LOG2> { };             /* physical address     */
-			struct Mt  : Base::template Bitset_3<Base::Pwt,
-							Base::Pcd, Pat> { };				  /* memory type          */
+			/**
+			 * Global attribute
+			 */
+			struct G : Base::template Bitfield<8, 1> { };
 
-			static typename Base::access_t create(Page_flags const &flags, addr_t const pa)
+			/**
+			 * Page attribute table
+			 */
+			struct Pat : Base::template Bitfield<12, 1> { };
+
+			/**
+			 * Physical address
+			 */
+			struct Pa : Base::template Bitfield<PAGE_SIZE_LOG2,
+			                                     48 - PAGE_SIZE_LOG2> { };
+
+			/**
+			 * Memory type
+			 */
+			struct Mt : Base::template Bitset_3<Base::Pwt,
+			                                    Base::Pcd, Pat> { };
+
+			static typename Base::access_t create(Page_flags const &flags,
+			                                      addr_t const pa)
 			{
 				/* XXX: Set memory type depending on active PAT */
 				return Base::create(flags)
@@ -316,11 +332,19 @@ class Genode::Page_directory
 		{
 			using Base = Base_descriptor;
 
-			struct Pa : Base::template Bitfield<12, 36> { };  /* physical address */
-			struct Mt : Base::template Bitset_2<Base::Pwt,
-							Base::Pcd> { };					  /* memory type      */
+			/**
+			 * Physical address
+			 */
+			struct Pa : Base::template Bitfield<12, 36> { };
 
-			static typename Base::access_t create(Page_flags const &flags, addr_t const pa)
+			/**
+			 * Memory types
+			 */
+			struct Mt : Base::template Bitset_2<Base::Pwt,
+			                                    Base::Pcd> { };
+
+			static typename Base::access_t create(Page_flags const &flags,
+			                                      addr_t const pa)
 			{
 				/* XXX: Set memory type depending on active PAT */
 				return Base::create(flags)
@@ -335,57 +359,57 @@ class Genode::Page_directory
 
 		struct Insert_func
 		{
-				Page_flags const & flags;
-				Page_slab        * slab;
+			Page_flags const & flags;
+			Page_slab        * slab;
 
-				Insert_func(Page_flags const & flags,
-				            Page_slab * slab) : flags(flags), slab(slab) { }
+			Insert_func(Page_flags const & flags,
+			            Page_slab * slab) : flags(flags), slab(slab) { }
 
-				void operator () (addr_t const vo,
-				                  addr_t const pa,
-				                  size_t const size,
-				                  typename Base_descriptor::access_t &desc)
-				{
-					/* can we insert a large page mapping? */
-					if (!((vo & ~PAGE_MASK) || (pa & ~PAGE_MASK) ||
-					      size < PAGE_SIZE)) {
-						typename Base_descriptor::access_t table_entry =
-							Page_descriptor::create(flags, pa);
+			void operator () (addr_t const vo,
+			                  addr_t const pa,
+			                  size_t const size,
+			                  typename Base_descriptor::access_t &desc)
+			{
+				/* can we insert a large page mapping? */
+				if (!((vo & ~PAGE_MASK) || (pa & ~PAGE_MASK) ||
+				      size < PAGE_SIZE)) {
+					typename Base_descriptor::access_t table_entry =
+						Page_descriptor::create(flags, pa);
 
-						if (Base_descriptor::present(desc) && desc != table_entry)
-							throw Double_insertion();
-
-						desc = table_entry;
-						return;
-					}
-
-					/* we need to use a next level table */
-					ENTRY *table;
-					if (!Base_descriptor::present(desc)) {
-						if (!slab)
-							throw Allocator::Out_of_memory();
-
-						/* create and link next level table */
-						table = new (slab) ENTRY();
-						ENTRY * phys_addr = (ENTRY*) slab->phys_addr(table);
-						desc = (typename Base_descriptor::access_t)
-							Table_descriptor::create(flags,
-									(addr_t)(phys_addr ? phys_addr : table));
-					} else if (Base_descriptor::maps_page(desc)) {
+					if (Base_descriptor::present(desc) && desc != table_entry)
 						throw Double_insertion();
-					} else {
-						Base_descriptor::merge_access_rights(desc, flags);
-						ENTRY * phys_addr = (ENTRY*)
-							Table_descriptor::Pa::masked(desc);
-						table = (ENTRY*) slab->virt_addr(phys_addr);
-						table = table ? table : (ENTRY*)phys_addr;
-					}
 
-					/* insert translation */
-					table->insert_translation(vo - (vo & PAGE_MASK),
-				                          pa, size, flags, slab);
+					desc = table_entry;
+					return;
 				}
 
+				/* we need to use a next level table */
+				ENTRY *table;
+				if (!Base_descriptor::present(desc)) {
+					if (!slab)
+						throw Allocator::Out_of_memory();
+
+					/* create and link next level table */
+					table = new (slab) ENTRY();
+					ENTRY * phys_addr = (ENTRY*) slab->phys_addr(table);
+					desc = (typename Base_descriptor::access_t)
+						Table_descriptor::create(flags,
+						                         (addr_t)(phys_addr ? phys_addr
+						                                            : table));
+				} else if (Base_descriptor::maps_page(desc)) {
+					throw Double_insertion();
+				} else {
+					Base_descriptor::merge_access_rights(desc, flags);
+					ENTRY * phys_addr = (ENTRY*)
+						Table_descriptor::Pa::masked(desc);
+					table = (ENTRY*) slab->virt_addr(phys_addr);
+					table = table ? table : (ENTRY*)phys_addr;
+				}
+
+				/* insert translation */
+				table->insert_translation(vo - (vo & PAGE_MASK),
+			                          pa, size, flags, slab);
+			}
 		};
 
 		struct Remove_func
@@ -399,7 +423,7 @@ class Genode::Page_directory
 				                  size_t const size,
 				                  typename Base_descriptor::access_t &desc)
 				{
-					if (Base_descriptor::present(desc))	{
+					if (Base_descriptor::present(desc)) {
 						if (Base_descriptor::maps_page(desc)) {
 							desc = 0;
 						} else {
@@ -408,7 +432,8 @@ class Genode::Page_directory
 								Table_descriptor::Pa::masked(desc);
 							ENTRY* table = (ENTRY*) slab->virt_addr(phys_addr);
 							table = table ? table : (ENTRY*)phys_addr;
-							table->remove_translation(vo - (vo & PAGE_MASK), size, slab);
+							table->remove_translation(vo - (vo & PAGE_MASK),
+							                          size, slab);
 							if (table->empty()) {
 								destroy(slab, table);
 								desc = 0;
@@ -453,7 +478,7 @@ class Genode::Page_directory
 		/**
 		 * Returns True if table does not contain any page mappings.
 		 *
-		 * \return		false if an entry is present, True otherwise
+		 * \return   false if an entry is present, True otherwise
 		 */
 		bool empty()
 		{
@@ -553,7 +578,9 @@ class Genode::PML4_table
 						/* create and link next level table */
 						table = new (slab) ENTRY();
 						ENTRY * phys_addr = (ENTRY*) slab->phys_addr(table);
-						desc = Descriptor::create(flags, (addr_t)(phys_addr ? phys_addr : table));
+						desc = Descriptor::create(flags,
+						                          (addr_t)(phys_addr ? phys_addr
+						                                             : table));
 					} else {
 						Descriptor::merge_access_rights(desc, flags);
 						ENTRY * phys_addr = (ENTRY*)
@@ -585,7 +612,8 @@ class Genode::PML4_table
 							Descriptor::Pa::masked(desc);
 						ENTRY* table = (ENTRY*) slab->virt_addr(phys_addr);
 						table = table ? table : (ENTRY*)phys_addr;
-						table->remove_translation(vo - (vo & PAGE_MASK), size, slab);
+						table->remove_translation(vo - (vo & PAGE_MASK), size,
+						                          slab);
 						if (table->empty()) {
 							destroy(slab, table);
 							desc = 0;
@@ -629,7 +657,7 @@ class Genode::PML4_table
 		/**
 		 * Returns True if table does not contain any page mappings.
 		 *
-		 * \return		false if an entry is present, True otherwise
+		 * \return  false if an entry is present, True otherwise
 		 */
 		bool empty()
 		{

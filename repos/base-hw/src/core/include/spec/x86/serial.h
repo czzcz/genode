@@ -45,7 +45,8 @@ enum {
 	COMPORT_STATUS_OFFSET = 5,
 
 	STATUS_THR_EMPTY = 0x20,  /* transmitter hold register empty */
-	STATUS_DHR_EMPTY = 0x40,  /* data hold register empty - data completely sent */
+	STATUS_DHR_EMPTY = 0x40,  /* data hold register empty
+	                             - data completely sent */
 };
 
 
