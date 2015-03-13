@@ -1,5 +1,5 @@
 /*
- * \brief   Startup code for core
+ * \brief   Startup code for kernel
  * \author  Adrian-Ken Rueegsegger
  * \author  Martin Stein
  * \author  Reto Buerki
